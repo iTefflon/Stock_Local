@@ -693,6 +693,42 @@
     </div>
   </div>
 
+  <!-- ═══ STATS STRIP ═══════════════════════════════════════════════ -->
+  <div class="stats-strip">
+    <div class="stat-card stat-total">
+      <div class="stat-val" id="statTotal">–</div>
+      <div class="stat-lbl">Productos totales</div>
+    </div>
+    <div class="stat-card stat-faltante">
+      <div class="stat-val" id="statFaltante">–</div>
+      <div class="stat-lbl">Faltantes</div>
+    </div>
+    <div class="stat-card stat-sobrante">
+      <div class="stat-val" id="statSobrante">–</div>
+      <div class="stat-lbl">Sobrantes</div>
+    </div>
+    <div class="stat-card stat-ok">
+      <div class="stat-val" id="statOk">–</div>
+      <div class="stat-lbl">Sin diferencia</div>
+    </div>
+    <div class="stat-card stat-repetida">
+      <div class="stat-val" id="statRepetida">–</div>
+      <div class="stat-lbl">Cód. repetidos consolidados</div>
+    </div>
+    <div class="stat-card stat-revisados">
+      <div class="stat-val" id="statRevisados">–</div>
+      <div class="stat-lbl">Checklist revisados</div>
+    </div>
+    <div class="stat-card stat-pendientes">
+      <div class="stat-val" id="statPendRevision">–</div>
+      <div class="stat-lbl">Checklist pendientes</div>
+    </div>
+    <div class="stat-card" style="min-width:180px">
+      <div class="stat-val" style="color:#2980b9;font-size:14px" id="statLocal">Local Sevilla</div>
+      <div class="stat-lbl">Revisión físicа · 21/03/2026</div>
+    </div>
+  </div>
+
   <!-- ═══ SEARCH BAR ════════════════════════════════════════════════ -->
   <div class="search-bar">
     <span class="search-label">Buscar por Nombre / Código</span>
@@ -737,9 +773,9 @@
     <!-- Estado filter -->
     <select class="cat-select" id="estadoFilter">
       <option value="">Todos los estados</option>
-      <option value="faltante">🔴 Faltantes</option>
-      <option value="sobrante">🟢 Sobrantes</option>
-      <option value="ok">⚪ Sin diferencia</option>
+      <option value="faltante"> Faltantes</option>
+      <option value="sobrante"> Sobrantes</option>
+      <option value="ok"> Sin diferencia</option>
     </select>
 
     <select class="cat-select" id="reviewFilter">
@@ -747,42 +783,14 @@
       <option value="revisado">Checklist: Revisados</option>
       <option value="pendiente">Checklist: Pendientes</option>
     </select>
-  </div>
 
-  <!-- ═══ STATS STRIP ═══════════════════════════════════════════════ -->
-  <div class="stats-strip">
-    <div class="stat-card stat-total">
-      <div class="stat-val" id="statTotal">–</div>
-      <div class="stat-lbl">Productos totales</div>
-    </div>
-    <div class="stat-card stat-faltante">
-      <div class="stat-val" id="statFaltante">–</div>
-      <div class="stat-lbl">Faltantes</div>
-    </div>
-    <div class="stat-card stat-sobrante">
-      <div class="stat-val" id="statSobrante">–</div>
-      <div class="stat-lbl">Sobrantes</div>
-    </div>
-    <div class="stat-card stat-ok">
-      <div class="stat-val" id="statOk">–</div>
-      <div class="stat-lbl">Sin diferencia</div>
-    </div>
-    <div class="stat-card stat-repetida">
-      <div class="stat-val" id="statRepetida">–</div>
-      <div class="stat-lbl">Cód. repetidos consolidados</div>
-    </div>
-    <div class="stat-card stat-revisados">
-      <div class="stat-val" id="statRevisados">–</div>
-      <div class="stat-lbl">Checklist revisados</div>
-    </div>
-    <div class="stat-card stat-pendientes">
-      <div class="stat-val" id="statPendRevision">–</div>
-      <div class="stat-lbl">Checklist pendientes</div>
-    </div>
-    <div class="stat-card" style="min-width:180px">
-      <div class="stat-val" style="color:#2980b9;font-size:14px" id="statLocal">Local Sevilla</div>
-      <div class="stat-lbl">Revisión físicа · 21/03/2026</div>
-    </div>
+    <select class="cat-select" id="sortSelect">
+      <option value="">Ordenar: Sin orden</option>
+      <option value="stockFisico_desc">Stock Fisico: Mayor a menor</option>
+      <option value="stockFisico_asc">Stock Fisico: Menor a mayor</option>
+      <option value="stockERP_desc">Stock ERP: Mayor a menor</option>
+      <option value="stockERP_asc">Stock ERP: Menor a mayor</option>
+    </select>
   </div>
 
   <!-- ═══ TABLE HEADER ══════════════════════════════════════════════ -->
@@ -861,6 +869,7 @@
       const cat = document.getElementById('catFilter').value;
       const estado = document.getElementById('estadoFilter').value;
       const revision = document.getElementById('reviewFilter').value;
+      const sortBy = document.getElementById('sortSelect').value;
 
       filteredProducts = allProducts.filter(p => {
         const matchQ = !q ||
@@ -875,6 +884,24 @@
           (revision === 'pendiente' && !checked);
         return matchQ && matchCat && matchEstado && matchRevision;
       });
+
+      if (sortBy) {
+        filteredProducts.sort((a, b) => {
+          let diff = 0;
+          if (sortBy === 'stockFisico_desc' || sortBy === 'stockFisico_asc') {
+            diff = Number(a.stockFisico) - Number(b.stockFisico);
+          } else if (sortBy === 'stockERP_desc' || sortBy === 'stockERP_asc') {
+            diff = Number(a.stockERP) - Number(b.stockERP);
+          }
+
+          if (diff !== 0) {
+            return sortBy.endsWith('_desc') ? -diff : diff;
+          }
+
+          return String(a.codigo).localeCompare(String(b.codigo), 'es', { numeric: true, sensitivity: 'base' });
+        });
+      }
+
       currentPage = 1;
       render();
     }
@@ -1097,6 +1124,7 @@
       document.getElementById('catFilter').value = '';
       document.getElementById('estadoFilter').value = '';
       document.getElementById('reviewFilter').value = '';
+      document.getElementById('sortSelect').value = '';
       filteredProducts = [...allProducts];
       currentPage = 1;
       render();
@@ -1104,6 +1132,7 @@
     document.getElementById('catFilter').addEventListener('change', applyFilters);
     document.getElementById('estadoFilter').addEventListener('change', applyFilters);
     document.getElementById('reviewFilter').addEventListener('change', applyFilters);
+    document.getElementById('sortSelect').addEventListener('change', applyFilters);
     document.getElementById('btnFilterCat').addEventListener('click', () => {
       document.getElementById('catFilter').focus();
     });
